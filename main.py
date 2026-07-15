@@ -57,14 +57,14 @@ async def health():
 
 @app.get("/tasks", response_model=List[Task])
 async def get_all_tasks(done: Optional[bool] = None, search: Optional[str]= None):
-    """Return the full list of tasks."""
+    """Return the full list of tasks, with optional filtering."""
     res = tasks
     if done is not None:
         res = [t for t in res if t.done == done]
     
     if search:
         res = [t for t in res if search.lower() in t.title.lower()]
-        
+
     return res
 
 @app.get("/tasks/{id}", response_model= Task)
@@ -118,3 +118,14 @@ async def delete_task(id: int):
     """Delete a task by id."""
     task = find_task(id)
     tasks.remove(task)
+
+@app.get("/stats")
+async def get_stats():
+    """Return counts of total, done, and open tasks."""
+    total = len(tasks)
+    done = 0
+    for t in tasks:
+        if t.done:
+            done += 1
+
+    return {"total": total, "done": done, "open": total - open}
