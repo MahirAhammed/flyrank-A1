@@ -30,28 +30,30 @@ app = FastAPI()
 # Initial endpoint
 @app.get("/hello")
 async def test():
+    """Sanity check."""
     return {"message": "Hello World"}
 
 # Root endpoint
 @app.get("/")
 async def root():
+    """Provide API info."""
     return {"name": "Task API", "version": "1.0", "endpoints": ["/tasks"]}
 
 # Health check
 @app.get("/health")
 async def health():
+    """Health check"""
     return { "status": "ok" }
 
 
-# Get all tasks
 @app.get("/tasks", response_model=List[Task])
 async def get_all_tasks():
+    """Return the full list of tasks."""
     return tasks
 
-# Get a specific task
 @app.get("/tasks/{id}", response_model= Task)
 async def get_task(id: int):
-    
+    """Return a single task by its id if exists."""
     for t in tasks:
         if t.id == id:
             return t
@@ -61,9 +63,9 @@ async def get_task(id: int):
         content= {"error": f"Task {id} not found"}
     )
 
-# Create a task
 @app.post("/tasks", response_model= Task, status_code= status.HTTP_201_CREATED)
 async def create_task(req: TaskRequest):
+    """Creates a new task from a title"""
     global id_counter
     
     reqTitle = req.title
@@ -79,10 +81,9 @@ async def create_task(req: TaskRequest):
 
     return new_task
 
-# Update a task
 @app.put("/tasks/{id}", response_model= Task)
 async def update_task(id: int, req: TaskRequest):
-
+    """Updates task title and/or done status."""
     if req.title is None and req.done is None:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -108,9 +109,9 @@ async def update_task(id: int, req: TaskRequest):
         content= {"error": f"Task {id} not found"}
     )
 
-# Delete a task
 @app.delete("/tasks/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(id: int):
+    """Delete a task by id."""
     for t in tasks:
         if t.id == id:
             tasks.remove(t)
