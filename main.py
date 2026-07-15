@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, status, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -23,6 +23,15 @@ tasks: List[Task] = [
 ]
 
 id_counter = 4
+
+# Helper function
+def find_task(id: int) -> Task:
+    """Return the task with given id."""
+    for t in tasks:
+        if t.id == id:
+            return t
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {id} not found")
+
 
 # FastAPI instance
 app = FastAPI()
@@ -54,14 +63,7 @@ async def get_all_tasks():
 @app.get("/tasks/{id}", response_model= Task)
 async def get_task(id: int):
     """Return a single task by its id if exists."""
-    for t in tasks:
-        if t.id == id:
-            return t
-    
-    return JSONResponse(
-        status_code= status.HTTP_404_NOT_FOUND,
-        content= {"error": f"Task {id} not found"}
-    )
+    return find_task(id)
 
 @app.post("/tasks", response_model= Task, status_code= status.HTTP_201_CREATED)
 async def create_task(req: TaskRequest):
@@ -70,9 +72,9 @@ async def create_task(req: TaskRequest):
     
     reqTitle = req.title
     if not reqTitle or not reqTitle.strip():
-        return JSONResponse(
+        raise HTTPException(
             status_code= status.HTTP_400_BAD_REQUEST,
-            content= {"error": "Title is required"}
+            detail= "Title is required"
         )  
 
     new_task = Task(id= id_counter, title= reqTitle, done= False)
@@ -85,39 +87,27 @@ async def create_task(req: TaskRequest):
 async def update_task(id: int, req: TaskRequest):
     """Updates task title and/or done status."""
     if req.title is None and req.done is None:
-        return JSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"error": "Request body must include title and/or done"}
+            detail= "Request body must include title and/or done"
         )
     
     if req.title is not None and not req.title.strip():
-        return JSONResponse(
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"error": "Title cannot be empty"}
+            detail= "Title cannot be empty"
         )
     
-    for t in tasks:
-        if t.id == id:
-            if req.title is not None:
-                t.title = req.title
-            if req.done is not None:
-                t.done = req.done
-            return t
+    task = find_task(id)
+    if req.title is not None:
+        task.title = req.title
+    if req.done is not None:
+        task.done = req.done
 
-    return JSONResponse(
-        status_code= status.HTTP_404_NOT_FOUND,
-        content= {"error": f"Task {id} not found"}
-    )
+    return task
 
 @app.delete("/tasks/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(id: int):
     """Delete a task by id."""
-    for t in tasks:
-        if t.id == id:
-            tasks.remove(t)
-            return
-
-    return JSONResponse(
-        status_code= status.HTTP_404_NOT_FOUND,
-        content= {"error": f"Task {id} not found"}
-    )
+    task = find_task(id)
+    tasks.remove(task)
