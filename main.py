@@ -6,9 +6,13 @@ from pydantic import BaseModel
 
 # Task model
 class Task(BaseModel):
-    id: int
+    id: int | None = None
     title: str
     done: bool = False
+
+# Task request DTO
+class TaskRequest(BaseModel):
+    title: str | None = None
 
 # data
 tasks: List[Task] = [
@@ -16,6 +20,8 @@ tasks: List[Task] = [
     Task(id= 2, title= "Watch lecture 2A", done= True),
     Task(id= 3, title= "Water the plants", done= False )
 ]
+
+id_counter = 4
 
 # FastAPI instance
 app = FastAPI()
@@ -53,3 +59,21 @@ async def get_task(id: int):
         status_code= status.HTTP_404_NOT_FOUND,
         content= {"error": f"Task {id} not found"}
     )
+
+# Create a task
+@app.post("/tasks", response_model= Task, status_code= status.HTTP_201_CREATED)
+async def create_task(req: TaskRequest):
+    global id_counter
+    
+    reqTitle = req.title
+    if not reqTitle or not reqTitle.strip():
+        return JSONResponse(
+            status_code= status.HTTP_400_BAD_REQUEST,
+            content= {"error": "Title is required"}
+        )  
+
+    new_task = Task(id= id_counter, title= reqTitle, done= False)
+    tasks.append(new_task)
+    id_counter += 1
+
+    return new_task
