@@ -24,6 +24,8 @@ tasks: List[Task] = [
 
 id_counter = 4
 
+default_tasks = tasks # store the default tasks for reset
+
 # Helper function
 def find_task(id: int) -> Task:
     """Return the task with given id."""
@@ -129,3 +131,10 @@ async def get_stats():
             done += 1
 
     return {"total": total, "done": done, "open": total - open}
+
+@app.post("/reset")
+async def reset():
+    global tasks, id_counter
+    tasks = default_tasks
+    id_counter = 4
+    return {"message": "tasks reset"}
