@@ -13,6 +13,7 @@ class Task(BaseModel):
 # Task request DTO
 class TaskRequest(BaseModel):
     title: str | None = None
+    done: bool | None = None
 
 # data
 tasks: List[Task] = [
@@ -77,3 +78,45 @@ async def create_task(req: TaskRequest):
     id_counter += 1
 
     return new_task
+
+# Update a task
+@app.put("/tasks/{id}", response_model= Task)
+async def update_task(id: int, req: TaskRequest):
+
+    if req.title is None and req.done is None:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"error": "Request body must include title and/or done"}
+        )
+    
+    if req.title is not None and not req.title.strip():
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"error": "Title cannot be empty"}
+        )
+    
+    for t in tasks:
+        if t.id == id:
+            if req.title is not None:
+                t.title = req.title
+            if req.done is not None:
+                t.done = req.done
+            return t
+
+    return JSONResponse(
+        status_code= status.HTTP_404_NOT_FOUND,
+        content= {"error": f"Task {id} not found"}
+    )
+
+# Delete a task
+@app.delete("/tasks/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_task(id: int):
+    for t in tasks:
+        if t.id == id:
+            tasks.remove(t)
+            return
+
+    return JSONResponse(
+        status_code= status.HTTP_404_NOT_FOUND,
+        content= {"error": f"Task {id} not found"}
+    )
