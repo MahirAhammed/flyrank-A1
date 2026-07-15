@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import FastAPI, status, HTTPException
 from fastapi.responses import JSONResponse
@@ -56,9 +56,16 @@ async def health():
 
 
 @app.get("/tasks", response_model=List[Task])
-async def get_all_tasks():
+async def get_all_tasks(done: Optional[bool] = None, search: Optional[str]= None):
     """Return the full list of tasks."""
-    return tasks
+    res = tasks
+    if done is not None:
+        res = [t for t in res if t.done == done]
+    
+    if search:
+        res = [t for t in res if search.lower() in t.title.lower()]
+        
+    return res
 
 @app.get("/tasks/{id}", response_model= Task)
 async def get_task(id: int):
