@@ -130,7 +130,7 @@ async def get_stats():
         if t.done:
             done += 1
 
-    return {"total": total, "done": done, "open": total - open}
+    return {"total": total, "done": done, "open": total - done}
 
 @app.post("/reset")
 async def reset():
