@@ -74,3 +74,14 @@ It didn't fully follow its own naming-repetition instruction. My prompt named tw
 
 - My prompt never mentioned the need of defining Task object as a Pydantic model, as well as the creation of seperate DTOs for each request.
 - The 3 seed tasks were never specified, the AI invented generic ones ("Buy groceries"). In addition, the seeding process by the AI follows best practice, and also makes it easy to reset tasks, which was never mentioned
+
+---
+
+## Assignment A2
+
+#### SQLite schema manipulation
+* **Query Executed:** 
+    ```sql
+    UPDATE tasks SET done = 1;
+    ```
+* **Result:** The database modified all rows instantly, and a subsequent `GET /tasks` request to the API immediately returned all tasks with their `done` status updated to true (1), proving both systems read from the exact same live file.
