@@ -5,26 +5,6 @@ from fastapi.responses import JSONResponse
 from models import Task, TaskCreate, TaskUpdate
 import database as db
 
-# data
-tasks: List[Task] = [
-    Task(id= 1, title= "Complete assignment A1", done= False),
-    Task(id= 2, title= "Watch lecture 2A", done= True),
-    Task(id= 3, title= "Water the plants", done= False )
-]
-
-id_counter = 4
-default_tasks = tasks # store the default tasks for reset
-
-# Helper function
-def find_task(id: int) -> Task:
-    """Return the task with given id."""
-    for t in tasks:
-        if t.id == id:
-            return t
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Task {id} not found")
-
-
-
 # FastAPI instance
 app = FastAPI()
 db.init_db()
@@ -34,6 +14,26 @@ db.init_db()
 async def http_exception_handler(req, exc: HTTPException) -> JSONResponse:
     """Return errors in the consistent format: {"error": "<message>"}."""
     return JSONResponse(status_code=exc.status_code, content={"error": exc.detail})
+
+# Helper functions
+def to_task(row: dict) -> Task:
+    return Task(id=row["id"], title=row["title"], done=bool(row["done"]))
+
+def fetch_task(id: int):
+    """fetch task from db by id."""
+    conn = db.get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM tasks WHERE id = ?", (id,))
+    row = cur.fetchone()
+    conn.close()
+    return row
+
+def get_valid_task(id: int) -> Task:
+    """Return the Task for id, or raise exception."""
+    row = fetch_task(id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return to_task(row)
 
 # Root endpoint
 @app.get("/")
@@ -69,23 +69,12 @@ async def get_all_tasks(done: Optional[bool] = None, search: Optional[str]= None
     rows = cur.fetchall()
     conn.close()
 
-    return [
-        {"id": row["id"], "title": row["title"], "done": bool(row["done"])} for row in rows
-    ]
+    return [to_task(row) for row in rows]
 
 @app.get("/tasks/{id}", response_model= Task)
 async def get_task(id: int):
     """Return a single task by its id if exists."""
-    conn = db.get_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM tasks WHERE id = ?", (id,))
-    row = cur.fetchone()
-    conn.close()
-
-    if row is None:
-        raise HTTPException(status_code=404, detail="Task not found")
-
-    return Task(id= row["id"], title= row["title"], done= bool(row["done"]))
+    return get_valid_task(id)
 
 @app.post("/tasks", response_model= Task, status_code= status.HTTP_201_CREATED)
 async def create_task(req: TaskCreate):
@@ -96,7 +85,7 @@ async def create_task(req: TaskCreate):
     
     conn = db.get_connection()
     cur = conn.cursor()
-    cur.execute("INSERT INTO tasks VALUES (?, ?)", (req.title, 0))
+    cur.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", (req.title, 0))
     conn.commit()
     new_id = cur.lastrowid
     conn.close()
@@ -118,18 +107,13 @@ async def update_task(id: int, req: TaskUpdate):
             detail= "Title cannot be empty"
         )
     
+    current_task = get_valid_task(id)
+
+    new_title = req.title if req.title is not None else current_task.title
+    new_done = req.done if req.done is not None else bool(current_task.done)
+
     conn = db.get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM tasks WHERE id = ?", (id,))
-    row = cur.fetchone()
-
-    if row is None:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Task not found")
-
-    new_title = req.title if req.title is not None else row["title"]
-    new_done = req.done if req.done is not None else bool(row["done"])
-
     cur.execute(
         "UPDATE tasks SET title = ?, done = ? WHERE id = ?",
         (new_title, 1 if new_done else 0, id),
@@ -142,25 +126,10 @@ async def update_task(id: int, req: TaskUpdate):
 @app.delete("/tasks/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(id: int):
     """Delete a task by id."""
+    get_valid_task(id)
+
     conn = db.get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM tasks WHERE id = ?", (id,))
-    row = cur.fetchone()
-    if row is None:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Task not found")
-
     cur.execute("DELETE FROM tasks WHERE id = ?", (id,))
     conn.commit()
     conn.close()
-
-@app.get("/stats")
-async def get_stats():
-    """Return counts of total, done, and open tasks."""
-    total = len(tasks)
-    done = 0
-    for t in tasks:
-        if t.done:
-            done += 1
-
-    return {"total": total, "done": done, "open": total - done}
