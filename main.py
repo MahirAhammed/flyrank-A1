@@ -1,19 +1,7 @@
 from typing import List, Optional
 
 from fastapi import FastAPI, status, HTTPException
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-
-# Task model
-class Task(BaseModel):
-    id: int | None = None
-    title: str
-    done: bool = False
-
-# Task request DTO
-class TaskRequest(BaseModel):
-    title: str | None = None
-    done: bool | None = None
+from models import Task, TaskCreate, TaskUpdate
 
 # data
 tasks: List[Task] = [
@@ -37,12 +25,6 @@ def find_task(id: int) -> Task:
 
 # FastAPI instance
 app = FastAPI()
-
-# Initial endpoint
-@app.get("/hello")
-async def test():
-    """Sanity check."""
-    return {"message": "Hello World"}
 
 # Root endpoint
 @app.get("/")
@@ -75,7 +57,7 @@ async def get_task(id: int):
     return find_task(id)
 
 @app.post("/tasks", response_model= Task, status_code= status.HTTP_201_CREATED)
-async def create_task(req: TaskRequest):
+async def create_task(req: TaskCreate):
     """Creates a new task from a title"""
     global id_counter
     
@@ -89,11 +71,10 @@ async def create_task(req: TaskRequest):
     new_task = Task(id= id_counter, title= reqTitle, done= False)
     tasks.append(new_task)
     id_counter += 1
-
     return new_task
 
 @app.put("/tasks/{id}", response_model= Task)
-async def update_task(id: int, req: TaskRequest):
+async def update_task(id: int, req: TaskUpdate):
     """Updates task title and/or done status."""
     if req.title is None and req.done is None:
         raise HTTPException(
