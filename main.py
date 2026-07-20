@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from fastapi import FastAPI, status, HTTPException
 from models import Task, TaskCreate, TaskUpdate
+from database import get_connection, init_db
 
 # data
 tasks: List[Task] = [
@@ -11,7 +12,6 @@ tasks: List[Task] = [
 ]
 
 id_counter = 4
-
 default_tasks = tasks # store the default tasks for reset
 
 # Helper function
@@ -25,6 +25,7 @@ def find_task(id: int) -> Task:
 
 # FastAPI instance
 app = FastAPI()
+init_db()
 
 # Root endpoint
 @app.get("/")
