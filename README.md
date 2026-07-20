@@ -39,7 +39,7 @@ curl -i -X POST http://127.0.0.1:8000/tasks \
 Restarting the server means running the server from the start, which is why all previous tasks stored are not persisted. The current implementation uses Python's `list` which is a variable in memory that exists only when the program is running.
 
 ## Swagger-UI
-![Swagger UI](./image.png)
+![Swagger UI](images/swagger.png)
 
 ## AI vs me
 
@@ -79,9 +79,29 @@ It didn't fully follow its own naming-repetition instruction. My prompt named tw
 
 ## Assignment A2
 
-#### SQLite schema manipulation
+#### Stage 4: SQLite querying
 * **Query Executed:** 
     ```sql
     UPDATE tasks SET done = 1;
     ```
 * **Result:** The database modified all rows instantly, and a subsequent `GET /tasks` request to the API immediately returned all tasks with their `done` status updated to true (1), proving both systems read from the exact same live file.
+
+### Stage 5: Database Architecture
+
+#### Why SQLite?
+*   **Zero Setup:** It requires no independent server installation or configuration with `Python`. It runs entirely in-process.
+*   **Single-File Simplicity:** The entire database is contained within a single file on disk, making it lightweight and highly portable.
+*   **Persistence:** Unlike an in-memory array, it natively survives server restarts and crashes, serving as a reliable data store.
+
+#### Database Location & Lifecycle
+*   **File Path:** The application connects to `tasks.db` in the project root directory.
+*   **Auto-Creation:** If the file does not exist when the application launches, SQLite automatically generates it and applies the initial schema.
+
+![alt text](images/db.png)
+
+#### Run the updated project
+- To start FastAPI server and initialize the automatic database connection, run the following command:
+
+```bash
+uvicorn main:app --reload
+```
