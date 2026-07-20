@@ -90,7 +90,6 @@ async def get_task(id: int):
 @app.post("/tasks", response_model= Task, status_code= status.HTTP_201_CREATED)
 async def create_task(req: TaskCreate):
     """Creates a new task from a title"""
-    
     reqTitle = req.title
     if not reqTitle or not reqTitle.strip():
         raise HTTPException(status_code= status.HTTP_400_BAD_REQUEST,detail= "Title is required")  
@@ -119,19 +118,41 @@ async def update_task(id: int, req: TaskUpdate):
             detail= "Title cannot be empty"
         )
     
-    task = find_task(id)
-    if req.title is not None:
-        task.title = req.title
-    if req.done is not None:
-        task.done = req.done
+    conn = db.get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM tasks WHERE id = ?", (id,))
+    row = cur.fetchone()
 
-    return task
+    if row is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    new_title = req.title if req.title is not None else row["title"]
+    new_done = req.done if req.done is not None else bool(row["done"])
+
+    cur.execute(
+        "UPDATE tasks SET title = ?, done = ? WHERE id = ?",
+        (new_title, 1 if new_done else 0, id),
+    )
+    conn.commit()
+    conn.close()
+
+    return Task(id= id, title= new_title, done= new_done)
 
 @app.delete("/tasks/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(id: int):
     """Delete a task by id."""
-    task = find_task(id)
-    tasks.remove(task)
+    conn = db.get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM tasks WHERE id = ?", (id,))
+    row = cur.fetchone()
+    if row is None:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    cur.execute("DELETE FROM tasks WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
 
 @app.get("/stats")
 async def get_stats():
@@ -143,10 +164,3 @@ async def get_stats():
             done += 1
 
     return {"total": total, "done": done, "open": total - done}
-
-@app.post("/reset")
-async def reset():
-    global tasks, id_counter
-    tasks = default_tasks
-    id_counter = 4
-    return {"message": "tasks reset"}
