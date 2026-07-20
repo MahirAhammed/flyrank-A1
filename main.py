@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from fastapi import FastAPI, status, HTTPException
 from models import Task, TaskCreate, TaskUpdate
-from database import get_connection, init_db
+import database as db
 
 # data
 tasks: List[Task] = [
@@ -25,7 +25,7 @@ def find_task(id: int) -> Task:
 
 # FastAPI instance
 app = FastAPI()
-init_db()
+db.init_db()
 
 # Root endpoint
 @app.get("/")
@@ -43,19 +43,41 @@ async def health():
 @app.get("/tasks", response_model=List[Task])
 async def get_all_tasks(done: Optional[bool] = None, search: Optional[str]= None):
     """Return the full list of tasks, with optional filtering."""
-    res = tasks
+    
+    conn = db.get_connection()
+    cur = conn.cursor()
+    query = "SELECT * FROM tasks WHERE 1=1"
+    params = []
+
     if done is not None:
-        res = [t for t in res if t.done == done]
+        query += " AND done = ?"
+        params.append(1 if done else 0)
     
     if search:
-        res = [t for t in res if search.lower() in t.title.lower()]
+        query += " AND LOWER(title) LIKE ?"
+        params.append(f"%{search.lower()}%")
 
-    return res
+    cur.execute(query, params)
+    rows = cur.fetchall()
+    conn.close()
+
+    return [
+        {"id": row["id"], "title": row["title"], "done": bool(row["done"])} for row in rows
+    ]
 
 @app.get("/tasks/{id}", response_model= Task)
 async def get_task(id: int):
     """Return a single task by its id if exists."""
-    return find_task(id)
+    conn = db.get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM tasks WHERE id = ?", (id,))
+    row = cur.fetchone()
+    conn.close()
+
+    if row is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    return {"id": row["id"], "title": row["title"], "done": bool(row["done"])}
 
 @app.post("/tasks", response_model= Task, status_code= status.HTTP_201_CREATED)
 async def create_task(req: TaskCreate):
