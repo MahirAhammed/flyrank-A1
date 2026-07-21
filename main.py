@@ -17,7 +17,7 @@ async def http_exception_handler(req, exc: HTTPException) -> JSONResponse:
 
 # Helper functions
 def to_task(row: dict) -> Task:
-    return Task(id=row["id"], title=row["title"], done=bool(row["done"]))
+    return Task(id=row["id"], title=row["title"], done=row["done"])
 
 def fetch_task(id: int):
     """fetch task from db by id."""
@@ -87,12 +87,12 @@ async def create_task(req: TaskCreate):
     
     conn = db.get_connection()
     cur = conn.cursor()
-    cur.execute("INSERT INTO tasks (title, done) VALUES (?, ?)", (req.title, 0))
+    cur.execute("INSERT INTO tasks (title, done) VALUES (%s, %s) RETURNING *", (req.title, False))
+    row = cur.fetchone()
     conn.commit()
-    new_id = cur.lastrowid
     conn.close()
 
-    return Task(id=new_id, title=reqTitle, done=False)
+    return to_task(row)
 
 @app.put("/tasks/{id}", response_model= Task)
 async def update_task(id: int, req: TaskUpdate):
@@ -117,8 +117,8 @@ async def update_task(id: int, req: TaskUpdate):
     conn = db.get_connection()
     cur = conn.cursor()
     cur.execute(
-        "UPDATE tasks SET title = ?, done = ? WHERE id = ?",
-        (new_title, 1 if new_done else 0, id),
+        "UPDATE tasks SET title = %s, done = %s WHERE id = %s",
+        (new_title, new_done, id),
     )
     conn.commit()
     conn.close()
@@ -132,7 +132,7 @@ async def delete_task(id: int):
 
     conn = db.get_connection()
     cur = conn.cursor()
-    cur.execute("DELETE FROM tasks WHERE id = ?", (id,))
+    cur.execute("DELETE FROM tasks WHERE id = %s", (id,))
     conn.commit()
     conn.close()
 
@@ -143,7 +143,7 @@ async def stats():
     cur = conn.cursor()
     cur.execute("SELECT COUNT(*) AS total FROM tasks")
     total = cur.fetchone()["total"]
-    cur.execute("SELECT COUNT(*) AS done_count FROM tasks WHERE done = 1")
+    cur.execute("SELECT COUNT(*) AS done_count FROM tasks WHERE done IS TRUE")
     done = cur.fetchone()["done_count"]
     conn.close()
 
