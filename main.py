@@ -3,7 +3,7 @@ from typing import List, Optional
 from fastapi import FastAPI, status, HTTPException
 from fastapi.responses import JSONResponse
 from models import Task, TaskCreate, TaskUpdate
-import database as db
+import database_psql as db
 
 # FastAPI instance
 app = FastAPI()
