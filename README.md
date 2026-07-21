@@ -97,7 +97,7 @@ It didn't fully follow its own naming-repetition instruction. My prompt named tw
 *   **File Path:** The application connects to `tasks.db` in the project root directory.
 *   **Auto-Creation:** If the file does not exist when the application launches, SQLite automatically generates it and applies the initial schema.
 
-![alt text](images/db.png)
+![SQLite](images/db.png)
 
 #### Run the updated project
 - To start FastAPI server and initialize the automatic database connection, run the following command:
@@ -142,3 +142,38 @@ Runnable via `uvicorn main:app --reload`.
 - Didn't specify file structure → it kept everything in one main.py instead of models.py/database.py split.
 - Didn't specify connection-handling strategy → it chose one-connection-per-request, which is a better approach.
 - Didn't specify how to build the response after writes → it re-queries the DB.
+
+---
+## Assignment A2
+
+### Run it
+- To start both the API and a Postgres database (create `tasks` table if it doesn't exist, and seeds three example tasks on first run):
+
+```bash
+docker compose up
+```
+
+### Environment variables
+
+Copy `.env.example` to `.env` and adjust if needed:
+```bash
+cp .env.example .env
+```
+See `.env.example` for the required variables (`DATABASE_URL`, `POSTGRES_PASSWORD`, `POSTGRES_DB`).
+
+### Example request
+
+```bash
+curl -i http://127.0.0.1:8000/tasks
+```
+
+- Expected response:
+```
+HTTP/1.1 200 OK
+content-type: application/json
+
+[{"id":1,"title":"Complete assignment A1","done":false}, ...]
+```
+
+### Data in the database
+![Postgres](images/postgres.png)
