@@ -23,7 +23,7 @@ def fetch_task(id: int):
     """fetch task from db by id."""
     conn = db.get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM tasks WHERE id = ?", (id,))
+    cur.execute("SELECT * FROM tasks WHERE id = %s", (id,))
     row = cur.fetchone()
     conn.close()
     return row
@@ -58,11 +58,11 @@ async def get_all_tasks(done: Optional[bool] = None, search: Optional[str]= None
     params = []
 
     if done is not None:
-        query += " AND done = ?"
-        params.append(1 if done else 0)
+        query += " AND done = %s"
+        params.append(done)
     
     if search:
-        query += " AND LOWER(title) LIKE ?"
+        query += " AND LOWER(title) LIKE %s"
         params.append(f"%{search.lower()}%")
 
     query += " ORDER BY title"
