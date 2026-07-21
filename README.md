@@ -105,3 +105,40 @@ It didn't fully follow its own naming-repetition instruction. My prompt named tw
 ```bash
 uvicorn main:app --reload
 ```
+
+## AI vs me
+
+### My prompt
+Migrate an existing in-memory simple task manager CRUD API to use SQLite for persistent storage.
+
+Stack: Python, FastAPI, SQLite via the built-in `sqlite3` module.
+
+Database requirements:
+- Single table `tasks` with columns: id (integer primary key, autoincrement), title (text, not null), done (integer, default 0)
+- Create the table only if it doesn't already exist
+- Seed exactly 3 example tasks, but only if the table is currently empty
+- All queries must use parameterized placeholders (?)
+
+Current behavior to preserve exactly:
+- Five endpoints: GET /tasks, GET /tasks/{id}, POST /tasks, PUT /tasks/{id}, DELETE /tasks/{id}
+- POST /tasks: creates from `title`; returns 400 if title is missing or blank/whitespace-only; auto-assigns id; `done` defaults to false; returns 201 with the created task
+- PUT /tasks/{id}: title and done are both optional but at least one is required (400 if neither given); 400 if title is provided but blank; 404 if task with the id doesn't exist; returns the updated task
+- DELETE /tasks/{id}: 404 if task id doesn't exist; 204 with no body on success
+- All errors return JSON in the shape {"error": "<message>"}, not FastAPI's default {"detail": ...}
+
+Runnable via `uvicorn main:app --reload`.
+
+##### What the AI did better
+- Correct exception handling: `try/finally` on every connection, which closes even if an exception fires mid-route.
+- Reuses a single connection per request (passes conn into fetch_task), whereas my code opens a new connection per helper call.
+- Re-fetches the row after insert/update, confirming actual stored state rather than trusting in-memory values.
+- Custom `RequestValidationError` for better error handling.
+
+##### What it got wrong or quietly ignored
+- No response_model=Task on any route, weaker Swagger docs and no automatic response validation
+
+##### What my prompt forgot to specify, and what the AI decided for me
+- It added ORDER BY id unprompted, a reasonable default I hadn't considered.
+- Didn't specify file structure → it kept everything in one main.py instead of models.py/database.py split.
+- Didn't specify connection-handling strategy → it chose one-connection-per-request, which is a better approach.
+- Didn't specify how to build the response after writes → it re-queries the DB.
