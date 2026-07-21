@@ -65,6 +65,8 @@ async def get_all_tasks(done: Optional[bool] = None, search: Optional[str]= None
         query += " AND LOWER(title) LIKE ?"
         params.append(f"%{search.lower()}%")
 
+    query += " ORDER BY title"
+
     cur.execute(query, params)
     rows = cur.fetchall()
     conn.close()
@@ -133,3 +135,16 @@ async def delete_task(id: int):
     cur.execute("DELETE FROM tasks WHERE id = ?", (id,))
     conn.commit()
     conn.close()
+
+@app.get("/stats", status_code= 200)
+async def stats():
+    """Return counts of total, done and open tasks."""
+    conn = db.get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) AS total FROM tasks")
+    total = cur.fetchone()["total"]
+    cur.execute("SELECT COUNT(*) AS done_count FROM tasks WHERE done = 1")
+    done = cur.fetchone()["done_count"]
+    conn.close()
+
+    return {"total": total, "done": done, "open": total - done}
