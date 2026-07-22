@@ -45,7 +45,15 @@ async def root():
 @app.get("/health")
 async def health():
     """Health check"""
-    return { "status": "ok" }
+    try:
+        conn = db.get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        cur.fetchone()
+        conn.close()
+        return { "status": "ok", "db": "ok" }
+    except:
+        raise HTTPException(status_code= 503, detail= "Database unreachable")
 
 
 @app.get("/tasks", response_model=List[Task])
