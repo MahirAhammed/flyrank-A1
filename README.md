@@ -177,3 +177,9 @@ content-type: application/json
 
 ### Data in the database
 ![Postgres](images/postgres.png)
+
+### Extras
+
+#### Purpose of volumes
+when a container is stopped or removed, everything written inside its filesystem is gone with it. A volume lives outside the container's lifecycle, so the database's actual data files persist.
+
