@@ -183,3 +183,29 @@ content-type: application/json
 #### Purpose of volumes
 when a container is stopped or removed, everything written inside its filesystem is gone with it. A volume lives outside the container's lifecycle, so the database's actual data files persist.
 
+#### Indexing
+
+##### Before Indexing
+```bash
+Seq Scan on tasks  (cost=0.00..22.50 rows=625 width=37) (actual time=0.016..0.017 rows=3.00 loops=1)
+  Filter: done
+  Rows Removed by Filter: 1
+  Buffers: shared hit=1
+Planning:
+  Buffers: shared hit=57
+Planning Time: 0.285 ms
+Execution Time: 0.055 ms
+```
+
+##### After Indexing
+```bash
+ Seq Scan on tasks  (cost=0.00..22.50 rows=625 width=37) (actual time=0.039..0.042 rows=3.00 loops=1)
+   Filter: done
+   Rows Removed by Filter: 1
+   Buffers: shared hit=1
+ Planning:
+   Buffers: shared hit=57
+ Planning Time: 0.648 ms
+ Execution Time: 0.114 ms
+```
+Querying is still done sequentially, since at a small scale it is faster than indexing.

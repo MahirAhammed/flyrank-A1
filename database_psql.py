@@ -22,6 +22,8 @@ def init_db():
         )
     """)
 
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_tasks_done ON tasks(done)")
+
     cursor.execute("SELECT COUNT(*) FROM tasks")
     count = cursor.fetchone()["count"]
 
