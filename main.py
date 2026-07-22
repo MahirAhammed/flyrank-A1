@@ -8,6 +8,7 @@ import database_psql as db
 # FastAPI instance
 app = FastAPI()
 db.init_db()
+db.ping_redis()
 
 # Global exception handler
 @app.exception_handler(HTTPException)

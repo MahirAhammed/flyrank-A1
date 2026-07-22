@@ -2,9 +2,15 @@ import os
 import psycopg
 from psycopg.rows import dict_row
 from dotenv import load_dotenv
+import redis
 
 load_dotenv()
 DATABASE_URL = os.environ["DATABASE_URL"]
+
+rs = redis.Redis(host= "redis", port= 6379, decode_responses= True)
+
+def ping_redis():
+    r.ping()
 
 def get_connection():
     return psycopg.connect(DATABASE_URL, row_factory=dict_row)
