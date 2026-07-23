@@ -144,7 +144,7 @@ Runnable via `uvicorn main:app --reload`.
 - Didn't specify how to build the response after writes → it re-queries the DB.
 
 ---
-## Assignment A2
+## Assignment A3
 
 ### Run it
 - To start both the API and a Postgres database (create `tasks` table if it doesn't exist, and seeds three example tasks on first run):
@@ -209,3 +209,49 @@ Execution Time: 0.055 ms
  Execution Time: 0.114 ms
 ```
 Querying is still done sequentially, since at a small scale it is faster than indexing.
+
+
+### AI vs me
+#### Prompt
+Containerize an existing FastAPI task manager API to run with Docker Compose, using PostgreSQL for persistent storage.
+
+Stack: Python, FastAPI, PostgreSQL via psycopg
+
+Database:
+- Single table `tasks`: id (serial primary key), title (text, not null), done (boolean, default false)
+- Create the table on startup only if it doesn't already exist
+- Seed exactly 3 example tasks, but only if the table is currently empty, check row count first, never reseed on every restart
+- All queries must use parameterized placeholders
+
+Endpoints identical behavior to the existing API:
+- GET /tasks
+- GET /tasks/{id} ->return 404 if not found
+- POST /tasks -> 400 if title missing/blank, 201 with created task on success
+- PUT /tasks/{id} -> both title and done optional but at least one required (400 if neither), 400 if title is blank, 404 if id doesn't exist
+- DELETE /tasks/{id} -> 404 if not found, 204 with empty body on success
+- All errors return JSON as {"error": "<message>"}, not FastAPI's default {"detail": ...}
+
+Docker/Compose requirements:
+- Dockerfile for the API service
+- compose.yaml with two services: api (built from the Dockerfile) and db (postgres image)
+- Database password and connection string must come from a .env file
+- Postgres data must persist across container restarts via a named volume
+- The entire app must start with a single command: docker compose up
+
+Keep the setup minimal, no extra services beyond api and db unless needed for the above, and follow best coding conventions
+
+##### What the AI did better
+- Uses a `ConnectionPool` (psycopg_pool) instead of opening/closing a raw connection per request, more efficient under load.
+- `depends_on: db: condition: service_healthy`, and a real healthcheck, which solves the "app starts before Postgres is ready" race condition my setup doesn't handle.
+- `restart: unless-stopped` on both services, allowing to recovers from crashes.
+- Better handling of connection and its cursor using `with`
+- PUT builds only the SET clauses for fields actually provided, therefore fewer queries per update.
+- RETURNING id, title, done on INSERT/UPDATE/DELETE, one round-trip instead of insert and select
+
+##### What it got wrong or quietly ignored
+- `Task` Pydantic model is defined in `models.py` but never used for responses.
+
+##### What my prompt forgot to specify, and what the AI decided for me
+- Healthcheck or depends_on conditions was not requested, its addition was reasonable.
+- Didn't specify connection pooling, it chose pooling which is a more production-realistic default.
+- Did't specify postgres:16-alpine, image slimness wasn't requested but was followed
