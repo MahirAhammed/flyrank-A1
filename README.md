@@ -5,7 +5,7 @@ A simple RESTful API for managing a to-do list, built with FastAPI.
 ## Install & Run
 
 ```bash
-pip install fastapi uvicorn psycopg[binary]
+pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
@@ -43,7 +43,7 @@ Restarting the server means running the server from the start, which is why all 
 ## AI vs me
 
 ### My prompt
-
+```text
 Build a REST API for a simple task manager using Python and FastAPI, with data stored in memory (a Python list, no database). Include automatic interactive API docs via Swagger UI (FastAPI gives this for free at `/docs`).
 Define a Task object with attributes: `id` (integer), `title` (string), `done` (boolean, defaults to false).
 Seed the in-memory store with 3 example tasks on startup.
@@ -56,6 +56,7 @@ The API should consist of the following endpoints:
 5. DELETE /tasks -> remove a task by id. Return 404 if the id doesn't exist. Return 204 (no body) on success.
 
 Give each endpoint a one-line description so it shows up nicely in Swagger UI. Keep the code in a single `main.py` file, runnable with `uvicorn main:app --reload`. Follow best coding practice and avoid unnecessary code repetition.
+```
 
 ##### What the AI did better
 
@@ -102,12 +103,13 @@ It didn't fully follow its own naming-repetition instruction. My prompt named tw
 - To start FastAPI server and initialize the automatic database connection, run the following command:
 
 ```bash
-uvicorn main:app --reload
+uvicorn app.main:app --reload
 ```
 
 ## AI vs me
 
 ### My prompt
+```text
 Migrate an existing in-memory simple task manager CRUD API to use SQLite for persistent storage.
 
 Stack: Python, FastAPI, SQLite via the built-in `sqlite3` module.
@@ -126,6 +128,7 @@ Current behavior to preserve exactly:
 - All errors return JSON in the shape {"error": "<message>"}, not FastAPI's default {"detail": ...}
 
 Runnable via `uvicorn main:app --reload`.
+```
 
 ##### What the AI did better
 - Correct exception handling: `try/finally` on every connection, which closes even if an exception fires mid-route.
@@ -212,6 +215,7 @@ Querying is still done sequentially, since at a small scale it is faster than in
 
 ### AI vs me
 #### Prompt
+```text
 Containerize an existing FastAPI task manager API to run with Docker Compose, using PostgreSQL for persistent storage.
 
 Stack: Python, FastAPI, PostgreSQL via psycopg
@@ -238,6 +242,7 @@ Docker/Compose requirements:
 - The entire app must start with a single command: docker compose up
 
 Keep the setup minimal, no extra services beyond api and db unless needed for the above, and follow best coding conventions
+```
 
 ##### What the AI did better
 - Uses a `ConnectionPool` (psycopg_pool) instead of opening/closing a raw connection per request, more efficient under load.
