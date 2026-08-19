@@ -1,7 +1,6 @@
-from typing import Optional
 from pydantic import BaseModel
+from typing import Optional
 
-# Task model
 class Task(BaseModel):
     id: int | None = None
     title: str

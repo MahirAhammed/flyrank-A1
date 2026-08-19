@@ -3,6 +3,7 @@ services:
     build: .
     ports: ["8000:8000"]
     environment:
+      DB_BACKEND: postgres
       DATABASE_URL: ${DATABASE_URL}
     depends_on: [db, redis]
   db:

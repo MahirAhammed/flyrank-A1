@@ -5,8 +5,8 @@ A simple RESTful API for managing a to-do list, built with FastAPI.
 ## Install & Run
 
 ```bash
-pip install fastapi uvicorn
-uvicorn main:app --reload
+pip install fastapi uvicorn psycopg[binary]
+uvicorn app.main:app --reload
 ```
 
 ## Endpoints
@@ -21,7 +21,6 @@ uvicorn main:app --reload
 | GET    | `/tasks/{id}`| Get a single task by id                   | 200     | 404            |
 | POST   | `/tasks`     | Create a new task                         | 201     | 400            |
 | PUT    | `/tasks/{id}`| Replace a task's title and/or done status | 200     | 400, 404       |
-| DELETE | `/tasks/{id}`| Delete a task by id                       | 204     | 404            |
 | DELETE | `/tasks/{id}`| Delete a task by id                       | 204     | 404            |
 | GET    | `/stats`              | Return counts of total, done, open           | 200     | –              |
 | POST   | `/reset`              | Restore the 3 seed tasks                   | 200     | –              |
@@ -159,7 +158,7 @@ Copy `.env.example` to `.env` and adjust if needed:
 ```bash
 cp .env.example .env
 ```
-See `.env.example` for the required variables (`DATABASE_URL`, `POSTGRES_PASSWORD`, `POSTGRES_DB`).
+See `.env.example` for the required variables (`DATABASE_URL`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DB_BACKEND`).
 
 ### Example request
 
@@ -255,3 +254,77 @@ Keep the setup minimal, no extra services beyond api and db unless needed for th
 - Healthcheck or depends_on conditions was not requested, its addition was reasonable.
 - Didn't specify connection pooling, it chose pooling which is a more production-realistic default.
 - Did't specify postgres:16-alpine, image slimness wasn't requested but was followed
+
+---
+
+# Refactoring
+
+## Refactoring and database abstraction
+
+The project was refactored without changing the API functionality.
+
+## Layered structure
+
+The application is now separated into logical layers:
+
+- **API routes** handle HTTP requests and responses.
+- **Services** contain validation and business logic.
+- **Repositories** contain database queries.
+- **Database adapters** handle SQLite and PostgreSQL-specific operations.
+- **Schemas** define request and response models.
+
+```text
+app/
+├── api/
+│   └── routes/
+│       ├── root.py
+│       └── tasks.py
+├── database/
+│   ├── base.py
+│   ├── db_sqlite.py
+│   ├── db_psql.py
+│   └── factory.py
+├── repositories/
+│   └── task_repository.py
+├── services/
+│   └── task_service.py
+├── schemas/
+│   └── task.py
+└── main.py
+```
+
+#### Database selection
+
+The database backend can be selected using the `DB_BACKEND` environment variable.
+
+- SQLite:
+
+```dotenv
+DB_BACKEND=sqlite
+```
+
+- PostgreSQL:
+
+```dotenv
+DB_BACKEND=postgres
+DATABASE_URL=postgresql://user:password@db:5432/tasks
+```
+
+The factory creates the appropriate database adapter based on `DB_BACKEND`. The repository layer remains independent of the selected database.
+
+SQLite uses `?` placeholders, while PostgreSQL uses `%s`. Each database adapter exposes its correct placeholder through the common database interface.
+
+### API routes
+
+Routes are split into separate modules:
+
+- `root.py` — API information, health check and stats
+- `tasks.py` — task CRUD operations
+
+The API continues to run with:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+The existing endpoints and response behavior remain unchanged.
