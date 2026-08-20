@@ -1,5 +1,5 @@
 from openai import OpenAI
-from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL
+from task_analyzer.config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL
 
 client = OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
 
