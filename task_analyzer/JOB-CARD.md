@@ -2,12 +2,12 @@
 
 **What it does (one sentence):** Analyzes and categorizes a task provided in plain English.
 
-**Input:** { "text": "string, 1-200 non-whitespace characters" }
+**Input:** { "text": "string, 3-200 characters" }
 
 **Output:** { 
     "title": one short sentence, 1-100 characters 
     "category": one of [work|personal|academic|shopping|fitness|other],
-    "urgency": one of [low|medium|high],
+    "priority": one of [low|medium|high],
     "estimated_minutes": one of [10|15|30|60|120|180],
     "is_actionable": boolean
     "confidence": 0.0-1.0
