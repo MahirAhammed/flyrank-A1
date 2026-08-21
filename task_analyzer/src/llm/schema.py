@@ -25,7 +25,6 @@ class Priority(Enum):
     HIGH = "high"
 
 class EstimatedMinutes(Enum):
-    five = 5
     ten = 10
     fifteen = 15
     thirty = 30
