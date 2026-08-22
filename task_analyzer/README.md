@@ -63,3 +63,7 @@ Also fenced. `is_actionable: false` and `category: other` are correct, the model
 ```
 
 No JSON at all. The model broke character and refused in prose instead of following the prompt's own instruction for this exact case (classify as `other` / `is_actionable: false` / low confidence, per the hostile example in `prompts/task-categorizer-v1.md`). This is the most severe of the three as there's no field to fix, nothing to parse. Confirms Stage 3's parser must handle "response isn't JSON" as its own case, separate from "JSON with a bad field.
+
+## Stage 4: Retry policy
+
+- SDK auto-retries are disabled (`max_retries=0`), to allow custom retry logic in `_call_with_retry` to handle retries: timeout, `429`, and `5xx` only, up to 3 attempts with exponential backoff (1s, 2s, 4s + jitter), honoring `Retry-After` when present. `400`, `401`, and `403` are never retried.
