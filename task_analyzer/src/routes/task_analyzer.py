@@ -12,7 +12,7 @@ from task_analyzer.src.llm.prompt import load_system_prompt
 from task_analyzer.config import LLM_STUB, LLM_ENABLED
 
 router = APIRouter(tags=["/llm"])
-QUARANTINE_PATH = Path(__file__).parent.parent / "logs" / "quarantine.jsonl"
+QUARANTINE_PATH = Path(__file__).parent.parent.parent / "logs" / "quarantine.jsonl"
 
 def _quarantine(input_text: str, version: str, error: str) -> None:
     QUARANTINE_PATH.parent.mkdir(exist_ok=True)
