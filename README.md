@@ -4,7 +4,7 @@ A simple RESTful API for managing a to-do list, built with FastAPI.
 
 > **Repo scope:** This README documents the work completed for A1, A2, and A3, including the in-memory API, SQLite persistence, PostgreSQL integration, Docker Compose setup, and layered refactoring.
 >
-> A9 will build on this project but will be documented separately because of the additional functionality. See [`task-analyzer/README.md`](task_analyzer/README.md) for the A9 documentation.
+> A17 will build on this project but will be documented separately because of the additional functionality. See [`task-analyzer/README.md`](task_analyzer/README.md) for the A17 documentation.
 
 ## Install & Run
 
